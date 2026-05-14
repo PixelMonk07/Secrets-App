@@ -1,4 +1,4 @@
-# Secrets Project
+# Secrets-APP
 
 A web application that allows users to anonymously share secrets. Built with Node.js, Express, PostgreSQL, and features both local and Google OAuth authentication.
 
