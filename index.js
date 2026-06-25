@@ -7,33 +7,125 @@ import { Strategy } from "passport-local";
 import GoogleStrategy from "passport-google-oauth2";
 import session from "express-session";
 import env from "dotenv";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import connectPgSimple from "connect-pg-simple";
+import { body, validationResult } from "express-validator";
+import winston from "winston";
+import flash from "connect-flash";
+import { cleanEnv, str, port } from "envalid";
+
+const logger = winston.createLogger({
+  level: "info",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+  ),
+  transports: [
+    new winston.transports.Console()
+  ]
+});
+
 
 const app = express();
-const port = 3000;
+const serverPort = 3000;
 const saltRounds = 10;
 env.config();
 
+const envVars = cleanEnv(process.env, {
+  GOOGLE_CLIENT_ID: str(),
+  GOOGLE_CLIENT_SECRET: str(),
+  SESSION_SECRET: str(),
+
+  PG_USER: str(),
+  PG_HOST: str(),
+  PG_DATABASE: str(),
+  PG_PASSWORD: str(),
+  PG_PORT: port()
+})
+
+app.use(helmet());
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: "Too many login attempts. Try again later."
+});
+
+const PgSession = connectPgSimple(session);
+
 app.use(
   session({
+    store: new PgSession({
+      conObject: {
+        user: envVars.PG_USER,
+        host: process.env.PG_HOST,
+        database: process.env.PG_DATABASE,
+        password: process.env.PG_PASSWORD,
+        port: process.env.PG_PORT
+      }
+    }),
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000
+    }
   })
 );
+
+app.use(flash());
+
+
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-const db = new pg.Client({
+app.use((req, res, next) => {
+  res.locals.messages = req.flash();
+  next();
+})
+
+const db = new pg.Pool({
   user: process.env.PG_USER,
   host: process.env.PG_HOST,
   database: process.env.PG_DATABASE,
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT,
+  max: 20,
 });
-db.connect();
+
+(async () => {
+  try {
+    const client = await db.connect();
+
+    console.log("Database connected successfully");
+
+    client.release();
+  } catch (err) {
+    console.error("Database connection failed");
+    console.error(err);
+
+    process.exit(1);
+  }
+})();
+
+const registerValidation = [
+  body("username")
+    .isEmail()
+    .withMessage("Invalid email"),
+
+  body("password")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters")
+];
+
+app.use("/login", authLimiter);
+app.use("/register", authLimiter);
+
 
 app.get("/", (req, res) => {
   res.render("home.ejs");
@@ -47,7 +139,7 @@ app.get("/register", (req, res) => {
   res.render("register.ejs");
 });
 
-app.get("/logout", (req, res) => {
+app.get("/logout", (req, res, next) => {
   req.logout(function (err) {
     if (err) {
       return next(err);
@@ -59,19 +151,13 @@ app.get("/logout", (req, res) => {
 app.get("/secrets", async (req, res) => {
   if (req.isAuthenticated()) {
     try {
-      const result = await db.query("SELECT secret FROM users WHERE email = $1", [req.user.email]);
-      const secret = result.rows[0].secret;
-      if (secret) {
-        res.render("secrets.ejs", {secret: secret});
-      } else { 
-        res.render("secrets.ejs", {secret: "You have not submitted any secret(s) yet!"});
-      }
+      const result = await db.query("SELECT secret FROM secrets WHERE user_id = $1 ORDER BY created_at DESC", [req.user.id]);
+      const secrets = result.rows;
+      res.render("secrets.ejs", { secrets: result.rows });
     } catch (err) {
-      console.log(err);
+      logger.error(err);
+      res.render("secrets.ejs", { secrets: [] });
     }
-
-    //TODO: Update this to pull in the user secret to render in secrets.ejs
-
   } else {
     res.redirect("/login");
   }
@@ -80,7 +166,7 @@ app.get("/secrets", async (req, res) => {
 //TODO: Add a get route for the submit button
 //Think about how the logic should work with authentication.
 app.get("/submit", (req, res) => {
-  if(req.isAuthenticated()) {
+  if (req.isAuthenticated()) {
     res.render("submit.ejs");
   }
   else {
@@ -108,10 +194,18 @@ app.post(
   passport.authenticate("local", {
     successRedirect: "/secrets",
     failureRedirect: "/login",
+    failureFlash: true,
   })
 );
 
-app.post("/register", async (req, res) => {
+app.post("/register", registerValidation, async (req, res) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      errors: errors.array()
+    });
+  }
   const email = req.body.username;
   const password = req.body.password;
 
@@ -121,7 +215,7 @@ app.post("/register", async (req, res) => {
     ]);
 
     if (checkResult.rows.length > 0) {
-      req.redirect("/login");
+      return res.redirect("/login");
     } else {
       bcrypt.hash(password, saltRounds, async (err, hash) => {
         if (err) {
@@ -133,14 +227,14 @@ app.post("/register", async (req, res) => {
           );
           const user = result.rows[0];
           req.login(user, (err) => {
-            console.log("success");
+            logger.info("User logged in successfully");
             res.redirect("/secrets");
           });
         }
       });
     }
   } catch (err) {
-    console.log(err);
+    logger.error(err);
   }
 });
 
@@ -151,12 +245,12 @@ app.post("/submit", async (req, res) => {
   console.log(req.user);
 
   try {
-    await db.query("UPDATE users SET secret = $1 WHERE email = $2", [secret, req.user.email]);
+    await db.query("INSERT INTO secrets(user_id, secret) VALUES($1, $2)", [req.user.id, secret]);
     res.redirect("/secrets");
   } catch (err) {
-    console.log(err);
+    logger.error(err);
   }
-  
+
 })
 
 passport.use(
@@ -169,6 +263,11 @@ passport.use(
       if (result.rows.length > 0) {
         const user = result.rows[0];
         const storedHashedPassword = user.password;
+        if (!user.password) {
+          return cb(null, false, {
+            message: "Use Google Sign-In"
+          });
+        }
         bcrypt.compare(password, storedHashedPassword, (err, valid) => {
           if (err) {
             console.error("Error comparing passwords:", err);
@@ -185,7 +284,7 @@ passport.use(
         return cb("User not found");
       }
     } catch (err) {
-      console.log(err);
+      logger.error(err);
     }
   })
 );
@@ -207,8 +306,8 @@ passport.use(
         ]);
         if (result.rows.length === 0) {
           const newUser = await db.query(
-            "INSERT INTO users (email, password) VALUES ($1, $2)",
-            [profile.email, "google"]
+            "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
+            [profile.email, null]
           );
           return cb(null, newUser.rows[0]);
         } else {
@@ -221,13 +320,31 @@ passport.use(
   )
 );
 passport.serializeUser((user, cb) => {
-  cb(null, user);
+  cb(null, user.id);
 });
 
-passport.deserializeUser((user, cb) => {
-  cb(null, user);
+passport.deserializeUser(async (id, cb) => {
+  try {
+    const result = await db.query(
+      "SELECT id, email FROM users WHERE id = $1",
+      [id]
+    );
+
+    cb(null, result.rows[0]);
+  } catch (err) {
+    cb(err);
+  }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  res.status(500).json({
+    success: false,
+    message: "Internal Server Error"
+  });
+});
+
+app.listen(serverPort, () => {
+  console.log(`Server running on port ${serverPort}`);
 });

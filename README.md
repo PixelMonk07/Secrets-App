@@ -48,12 +48,17 @@ A web application that allows users to anonymously share secrets. Built with Nod
 
 4. **Set up PostgreSQL:**
    ```sql
-   CREATE DATABASE secrets;
-   CREATE TABLE users (
-     id SERIAL PRIMARY KEY,
-     email VARCHAR(100) UNIQUE NOT NULL,
-     password VARCHAR(100) NOT NULL,
-     secret TEXT
+      CREATE TABLE users (
+   id SERIAL PRIMARY KEY,
+   email VARCHAR(100) UNIQUE NOT NULL,
+   password VARCHAR(255)
+   );
+
+   CREATE TABLE secrets (
+   id SERIAL PRIMARY KEY,
+   user_id INTEGER REFERENCES users(id),
+   secret TEXT NOT NULL,
+   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
    );
    ```
 
