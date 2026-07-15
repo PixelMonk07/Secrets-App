@@ -1,41 +1,33 @@
 <%- include('partials/header') %>
-<div class="container mt-5">
-  <h1>Register</h1>
 
-  <div class="row">
-    <div class="col-sm-8">
-      <div class="card">
-        <div class="card-body">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <p class="auth-eyebrow">Begin anonymously</p>
+      <h1 class="auth-title">Create your account</h1>
+      <p class="auth-subtitle">We only ever know your email. No one else ever will.</p>
 
-          <!-- Makes POST request to /register route -->
-          <form action="/register" method="POST">
-            <div class="form-group">
-              <label for="email">Email</label>
-              <input type="email" class="form-control" name="username">
-            </div>
-            <div class="form-group">
-              <label for="password">Password</label>
-              <input type="password" class="form-control" name="password">
-            </div>
-            <button type="submit" class="btn btn-dark">Register</button>
-          </form>
-
+      <!-- Makes POST request to /register route -->
+      <form action="/register" method="POST">
+        <div class="field">
+          <label for="username">Email</label>
+          <input type="email" id="username" name="username" placeholder="you@example.com" required>
         </div>
-      </div>
-    </div>
-
-    <div class="col-sm-4">
-      <div class="card social-block">
-        <div class="card-body">
-          <a class="btn btn-block" href="/auth/google" role="button">
-            <i class="fab fa-google"></i>
-            Sign Up with Google
-          </a>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" required>
         </div>
-      </div>
-    </div>
+        <button type="submit" class="btn btn-solid auth-submit">Create account</button>
+      </form>
 
+      <div class="auth-divider">or</div>
+
+      <a class="btn btn-google" href="/auth/google" role="button">
+        <i class="fab fa-google"></i>
+        Continue with Google
+      </a>
+
+      <p class="auth-switch">Already have an account? <a href="/login">Log in</a></p>
+    </div>
   </div>
-</div>
 
 <%- include('partials/footer') %>

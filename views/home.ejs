@@ -1,16 +1,39 @@
 <%- include('partials/header') %>
 
+  <section class="hero">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
 
-<div class="jumbotron centered">
-  <div class="container">
-    <i class="fas fa-key fa-6x"></i>
-    <h1 class="display-3">Secrets</h1>
-    <p class="lead">Don't keep your secrets, share them anonymously!</p>
-    <hr>
-    <a class="btn btn-light btn-lg" href="/register" role="button">Register</a>
-    <a class="btn btn-dark btn-lg" href="/login" role="button">Login</a>
+    <p class="hero-eyebrow">🔒 Anonymous &middot; Always</p>
+    <h1 class="hero-title">Say what you <em>can't say</em><br> anywhere else.</h1>
+    <p class="hero-sub">No usernames. No faces. No history. Just the things you've never told anyone &mdash; set free.</p>
 
-  </div>
+    <div class="hero-actions">
+
+<% if (isAuthenticated) { %>
+
+    <a href="/submit" class="btn btn-solid btn-lg">
+        Share a Secret
+    </a>
+
+    <a href="/secrets" class="btn btn-ghost btn-lg">
+        Read Secrets
+    </a>
+
+<% } else { %>
+
+    <a href="/register" class="btn btn-solid btn-lg">
+        Share a Secret
+    </a>
+
+    <a href="/login" class="btn btn-ghost btn-lg">
+        Read Secrets
+    </a>
+
+<% } %>
+
 </div>
+  </section>
 
 <%- include('partials/footer') %>

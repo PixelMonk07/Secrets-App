@@ -1,20 +1,36 @@
 <%- include('partials/header') %>
 
-<div class="container">
-  <div class="jumbotron centered">
-    <i class="fas fa-key fa-6x"></i>
-    <h1 class="display-3">Secrets</h1>
-    <p class="secret-text">Don't keep your secrets, share them anonymously!</p>
+<div class="confess-wrap">
+  <div class="confess-overlay"></div>
 
-    <form action="/submit" method="POST">
+  <div class="confess-box">
+    <p class="confess-eyebrow">No one will ever know it was you</p>
+    <h1 class="confess-title">What's your secret?</h1>
 
-      <div class="form-group">
-        <input type="text" class="form-control text-center" name="secret" placeholder="What's your secret?">
+    <form action="/submit" method="POST" id="confess-form">
+      <textarea
+        class="confess-textarea"
+        name="secret"
+        id="secret-input"
+        placeholder="Type it here. No one is watching."
+        maxlength="280"
+        required
+        autofocus
+      ></textarea>
+
+      <div class="confess-meta">
+        <span><span id="char-count" class="char-count">0</span> / 280</span>
       </div>
-      <button type="submit" class="btn btn-dark">Submit</button>
+
+      <button type="submit" class="btn-whisper" id="whisper-btn">
+        Whisper it
+        <i class="fas fa-arrow-right"></i>
+      </button>
     </form>
 
-
+    <p class="confess-hint">Posted anonymously. Always.</p>
   </div>
 </div>
+
+<script src="/js/submit.js"></script>
 <%- include('partials/footer') %>

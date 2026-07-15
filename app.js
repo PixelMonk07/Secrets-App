@@ -9,6 +9,7 @@ import db from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import secretRoutes from "./routes/secretRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import { isAuthenticated } from "./middleware/authMiddleware.js";
 
 const app = express();
 
@@ -33,8 +34,11 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000
+      maxAge: 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      sameSite: "lax"
     }
   })
 );
@@ -47,13 +51,18 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.isAuthenticated();
+  res.locals.user = req.user || null;
   res.locals.messages = req.flash();
   next();
 });
 
 // Routes
 app.get("/", (req, res) => {
-  res.render("home.ejs");
+  res.render("home.ejs", {
+    isAuthenticated: req.isAuthenticated(),
+    user: req.user
+  });
 });
 
 app.use("/", authRoutes);

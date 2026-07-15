@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import db from "../config/db.js";
 import winston from "winston";
+import { generateUniqueAlias } from "../utils/aliasGenerator.js";
 
 const logger = winston.createLogger({
   level: "info",
@@ -23,7 +24,7 @@ export const getRegister = (req, res) => {
   res.render("register.ejs");
 };
 
-export const postRegister = async (req, res) => {
+export const postRegister = async (req, res, next) => {
   const email = req.body.username;
   const password = req.body.password;
 
@@ -39,14 +40,20 @@ export const postRegister = async (req, res) => {
         if (err) {
           console.error("Error hashing password:", err);
         } else {
+          const alias = await generateUniqueAlias(db);
           const result = await db.query(
-            "INSERT INTO users (email, password) VALUES ($1, $2) RETURNING *",
-            [email, hash]
+            "INSERT INTO users (email, password, anonymous_name) VALUES ($1, $2, $3) RETURNING *",
+            [email, hash, alias]
           );
           const user = result.rows[0];
           req.login(user, (err) => {
+            if (err) {
+              return next(err);
+            }
             logger.info("User registered and logged in successfully");
-            res.redirect("/secrets");
+            req.session.save(() => {
+              res.redirect("/secrets");
+            })
           });
         }
       });

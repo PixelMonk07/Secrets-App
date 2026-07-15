@@ -3,6 +3,7 @@ import { Strategy } from "passport-local";
 import GoogleStrategy from "passport-google-oauth2";
 import bcrypt from "bcrypt";
 import db from "./db.js";
+import { ensureAnonymousName } from "../utils/aliasGenerator.js";
 
 passport.use(
   "local",
@@ -19,13 +20,14 @@ passport.use(
             message: "Use Google Sign-In"
           });
         }
-        bcrypt.compare(password, storedHashedPassword, (err, valid) => {
+        bcrypt.compare(password, storedHashedPassword, async (err, valid) => {
           if (err) {
             console.error("Error comparing passwords:", err);
             return cb(err);
           } else {
             if (valid) {
-              return cb(null, user);
+              const alias = await ensureAnonymousName(user.id, db);
+              return cb(null, { ...user, anonymous_name: alias });
             } else {
               return cb(null, false);
             }
@@ -83,9 +85,22 @@ passport.serializeUser((user, cb) => {
 passport.deserializeUser(async (id, cb) => {
   try {
     const result = await db.query(
-      "SELECT id, email FROM users WHERE id = $1",
+      "SELECT id, email, anonymous_name FROM users WHERE id = $1",
       [id]
     );
+
+    if (result.rows.length === 0) {
+      return cb(null, false);
+    }
+
+    const user = result.rows[0];
+
+    // ensure old users get alias
+    if(!user.anonymous_name) {
+      const alias = await ensureAnonymousName(id, db);
+      user.anonymous_name = alias;
+    }
+
     cb(null, result.rows[0]);
   } catch (err) {
     cb(err);

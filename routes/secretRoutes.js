@@ -7,5 +7,6 @@ const router = express.Router();
 router.get("/secrets", isAuthenticated, secretController.getSecrets);
 router.get("/submit", isAuthenticated, secretController.getSubmit);
 router.post("/submit", isAuthenticated, secretController.postSubmit);
+router.post("/like/:secretId", isAuthenticated, secretController.toggleLike);
 
 export default router;
