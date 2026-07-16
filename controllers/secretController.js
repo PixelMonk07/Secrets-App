@@ -62,7 +62,7 @@ OFFSET $2;
     );
 
     const secrets = result.rows;
-
+    
     res.render("secrets.ejs", {
       secrets,
       page,
@@ -196,12 +196,14 @@ export const toggleLike = async (req, res) => {
       likeCount: countResult.rows[0].like_count
     });
   } catch (err) {
-    logger.error(err);
+    console.error("LIKE ERROR");
+    console.error(err);
+
     res.status(500).json({
-      success: false,
-      message: "Failed to update like"
+        success:false,
+        message: err.message
     });
-  }
+}
 };
 
 export const getLikeStatus = async (req, res) => {
