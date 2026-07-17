@@ -1,0 +1,28 @@
+<%- include('partials/header') %>
+
+<div class="confess-wrap">
+  <div class="confess-overlay"></div>
+
+  <div class="confess-box">
+    <p class="confess-eyebrow">No one will ever know it was you</p>
+    <h1 class="confess-title">What's your secret?</h1>
+
+    <form action="/edit/<%= secret.id %>" method="POST" id="confess-form">
+      <textarea name="secret"><%= secret.secret %></textarea>
+
+      <div class="confess-meta">
+        <span><span id="char-count" class="char-count">0</span> / 280</span>
+      </div>
+
+      <button type="submit" class="btn-whisper" id="whisper-btn">
+        Whisper it
+        <i class="fas fa-arrow-right"></i>
+      </button>
+    </form>
+
+    <p class="confess-hint">Posted anonymously. Always.</p>
+  </div>
+</div>
+
+<script src="/js/submit.js"></script>
+<%- include('partials/footer') %>

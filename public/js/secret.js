@@ -1,42 +1,88 @@
 document.addEventListener("DOMContentLoaded", () => {
-    document.addEventListener("click", async (event) => {
-      const btn = event.target.closest(".react-btn");
-      if (!btn) return;
+  document.addEventListener("click", async (event) => {
+    let selectedSecret = null;
 
-      event.preventDefault();
+    const modal = document.getElementById("deleteModal");
 
-      const secretId = btn.dataset.secretId;
-      const icon = btn.querySelector("i");
-      const countEl = btn.querySelector(".like-count");
+    const confirmBtn = document.getElementById("confirmDelete");
 
-      if (!secretId) return;
+    const cancelBtn = document.getElementById("cancelDelete");
 
-      btn.disabled = true;
+    const closeBtn = document.getElementById("closeModal");
 
-      try {
-        const response = await fetch(`/like/${secretId}`, {
-          method: "POST",
-          headers: {
-            Accept: "application/json"
-          }
-        });
+    const deleteBtn = event.target.closest(".delete-btn");
 
-        const data = await response.json();
+    if (!deleteBtn) return;
 
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || "Unable to update like");
+    selectedSecret = deleteBtn.dataset.secretId;
+
+    modal.classList.remove("hidden");
+
+    function closeModal() {
+
+      modal.classList.add("hidden");
+
+      selectedSecret = null;
+
+    }
+
+    cancelBtn.onclick = closeModal;
+
+    closeBtn.onclick = closeModal;
+
+    confirmBtn.onclick = () => {
+
+      if (!selectedSecret) return;
+
+      const form = document.createElement("form");
+
+      form.method = "POST";
+
+      form.action = "/delete/" + selectedSecret;
+
+      document.body.appendChild(form);
+
+      form.submit();
+
+    };
+
+    const btn = event.target.closest(".react-btn");
+    if (!btn) return;
+
+    event.preventDefault();
+
+    const secretId = btn.dataset.secretId;
+    const icon = btn.querySelector("i");
+    const countEl = btn.querySelector(".like-count");
+
+    if (!secretId) return;
+
+    btn.disabled = true;
+
+    try {
+      const response = await fetch(`/like/${secretId}`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json"
         }
+      });
 
-        const liked = Boolean(data.liked);
+      const data = await response.json();
 
-        btn.classList.toggle("liked", liked);
-        icon.classList.toggle("far", !liked);
-        icon.classList.toggle("fas", liked);
-        countEl.textContent = data.likeCount;
-      } catch (err) {
-        console.error(err);
-      } finally {
-        btn.disabled = false;
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Unable to update like");
       }
-    });
+
+      const liked = Boolean(data.liked);
+
+      btn.classList.toggle("liked", liked);
+      icon.classList.toggle("far", !liked);
+      icon.classList.toggle("fas", liked);
+      countEl.textContent = data.likeCount;
+    } catch (err) {
+      console.error(err);
+    } finally {
+      btn.disabled = false;
+    }
   });
+});

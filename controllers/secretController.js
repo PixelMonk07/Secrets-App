@@ -26,6 +26,7 @@ export const getSecrets = async (req, res) => {
     secrets.secret,
     secrets.created_at,
     users.anonymous_name,
+    secrets.user_id,
 
     COUNT(DISTINCT likes.id)::INTEGER AS like_count,
 
@@ -66,6 +67,7 @@ OFFSET $2;
     res.render("secrets.ejs", {
       secrets,
       page,
+      currentUser: req.user,
       formatTime: (date) => {
         const now = new Date();
         const then = new Date(date);
@@ -321,4 +323,95 @@ export const getLikeStatusForSecretWithFetch = async (req, res) => {
       message: "Failed to check like"
     });
   }
+};
+
+export const deleteSecret = async (req, res) => {
+
+    const secretId = req.params.id;
+
+    try {
+
+        await db.query(
+            `
+            DELETE FROM secrets
+            WHERE id=$1
+            AND user_id=$2
+            `,
+            [
+                secretId,
+                req.user.id
+            ]
+        );
+
+        res.redirect("/secrets");
+
+    }
+
+    catch(err){
+
+        logger.error(err);
+
+        res.redirect("/secrets");
+
+    }
+
+};
+
+export const getEdit = async (req,res)=>{
+
+    const result=await db.query(
+
+        `
+        SELECT *
+        FROM secrets
+        WHERE id=$1
+        AND user_id=$2
+        `,
+
+        [
+            req.params.id,
+            req.user.id
+        ]
+
+    );
+
+    if(result.rows.length===0){
+
+        return res.redirect("/secrets");
+
+    }
+
+    res.render("edit.ejs",{
+
+        secret:result.rows[0]
+
+    });
+
+};
+
+export const postEdit = async(req,res)=>{
+
+    await db.query(
+
+        `
+        UPDATE secrets
+        SET secret=$1
+        WHERE id=$2
+        AND user_id=$3
+        `,
+
+        [
+
+            req.body.secret,
+
+            req.params.id,
+
+            req.user.id
+
+        ]
+
+    );
+
+    res.redirect("/secrets");
+
 };
