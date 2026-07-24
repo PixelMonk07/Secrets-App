@@ -133,6 +133,36 @@ document.addEventListener("DOMContentLoaded", () => {
        DELETE MODAL EVENTS
     ============================================ */
 
+    document.addEventListener("click", (e) => {
+
+        const menuButton = e.target.closest(".menu-btn");
+
+        if (menuButton) {
+
+            const owner = menuButton.closest(".owner-actions");
+
+            document.querySelectorAll(".owner-actions")
+                .forEach(item => {
+
+                    if (item !== owner) {
+
+                        item.classList.remove("open");
+
+                    }
+
+                });
+
+            owner.classList.toggle("open");
+
+            return;
+
+        }
+
+        document.querySelectorAll(".owner-actions")
+            .forEach(item => item.classList.remove("open"));
+
+    });
+
     if (deleteModal) {
 
         if (deleteCloseBtn) {

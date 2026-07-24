@@ -17,6 +17,32 @@
         <i class="fas fa-lock lock-icon"></i>
         Secrets
       </a>
-      <div class="nav-actions" id="nav-actions-slot"></div>
+      <div class="nav-actions">
+
+              <% if(isAuthenticated){ %>
+
+                  <a href="/submit" class="nav-btn">
+                      <i class="fas fa-plus"></i>
+                      Whisper
+                  </a>
+
+                  <a href="/logout" class="nav-btn logout-btn">
+                      <i class="fas fa-sign-out-alt"></i>
+                      Logout
+                  </a>
+
+              <% } else { %>
+
+                  <a href="/login" class="nav-btn">
+                      Login
+                  </a>
+
+                  <a href="/register" class="nav-btn primary">
+                      Register
+                  </a>
+
+              <% } %>
+
+          </div>  
     </div>
   </nav>
