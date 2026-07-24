@@ -63,7 +63,7 @@ OFFSET $2;
     );
 
     const secrets = result.rows;
-    
+
     res.render("secrets.ejs", {
       secrets,
       page,
@@ -202,10 +202,10 @@ export const toggleLike = async (req, res) => {
     console.error(err);
 
     res.status(500).json({
-        success:false,
-        message: err.message
+      success: false,
+      message: err.message
     });
-}
+  }
 };
 
 export const getLikeStatus = async (req, res) => {
@@ -327,91 +327,104 @@ export const getLikeStatusForSecretWithFetch = async (req, res) => {
 
 export const deleteSecret = async (req, res) => {
 
-    const secretId = req.params.id;
+  const secretId = req.params.id;
 
-    try {
+  try {
 
-        await db.query(
-            `
+    await db.query(
+      `
             DELETE FROM secrets
             WHERE id=$1
             AND user_id=$2
             `,
-            [
-                secretId,
-                req.user.id
-            ]
-        );
+      [
+        secretId,
+        req.user.id
+      ]
+    );
 
-        res.redirect("/secrets");
+    res.json({
+      success: true
+    });
 
-    }
+  }
 
-    catch(err){
+  catch (err) {
 
-        logger.error(err);
+    logger.error(err);
 
-        res.redirect("/secrets");
+    res.status(500).json({
+      success: false
+    });
 
-    }
+  }
 
 };
 
-export const getEdit = async (req,res)=>{
+export const getEdit = async (req, res) => {
 
-    const result=await db.query(
+  const result = await db.query(
 
-        `
+    `
         SELECT *
         FROM secrets
         WHERE id=$1
         AND user_id=$2
         `,
 
-        [
-            req.params.id,
-            req.user.id
-        ]
+    [
+      req.params.id,
+      req.user.id
+    ]
 
-    );
+  );
 
-    if(result.rows.length===0){
+  if (result.rows.length === 0) {
 
-        return res.redirect("/secrets");
+    return res.redirect("/secrets");
 
-    }
+  }
 
-    res.render("edit.ejs",{
+  res.render("edit.ejs", {
 
-        secret:result.rows[0]
+    secret: result.rows[0]
 
-    });
+  });
 
 };
 
-export const postEdit = async(req,res)=>{
+export const postEdit = async (req, res) => {
+
+  try {
 
     await db.query(
-
-        `
-        UPDATE secrets
-        SET secret=$1
-        WHERE id=$2
-        AND user_id=$3
-        `,
-
-        [
-
-            req.body.secret,
-
-            req.params.id,
-
-            req.user.id
-
-        ]
-
+      `
+            UPDATE secrets
+            SET secret=$1
+            WHERE id=$2
+            AND user_id=$3
+            `,
+      [
+        req.body.secret,
+        req.params.id,
+        req.user.id
+      ]
     );
 
-    res.redirect("/secrets");
+    res.json({
+      success: true
+    });
+
+  }
+  catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to update secret."
+    });
+
+  }
 
 };
