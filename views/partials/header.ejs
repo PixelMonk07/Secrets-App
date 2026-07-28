@@ -26,10 +26,15 @@
                       Whisper
                   </a>
 
-                  <a href="/logout" class="nav-btn logout-btn">
-                      <i class="fas fa-sign-out-alt"></i>
-                      Logout
-                  </a>
+                  <button
+                    id="logoutBtn"
+                    class="nav-btn logout-btn"
+                    type="button">
+
+                    <i class="fas fa-sign-out-alt"></i>
+                    Logout
+
+                  </button>
 
               <% } else { %>
 
@@ -46,3 +51,52 @@
           </div>  
     </div>
   </nav>
+
+  <div class="modal-overlay" id="logoutModal">
+
+    <div class="delete-modal">
+
+        <button
+            class="close-modal"
+            id="closeLogout">
+
+            &times;
+
+        </button>
+
+        <h2>Leaving so soon?</h2>
+
+        <p>
+
+            The whispers will still be here when you return.
+
+            Are you sure you want to disappear for now?
+
+        </p>
+
+        <div class="modal-actions">
+
+            <button
+                id="cancelLogout"
+                class="cancel-btn">
+
+                Stay
+
+            </button>
+
+            <button
+                id="confirmLogout"
+                class="confirm-btn">
+
+                Logout
+
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="/js/logout.js"></script>
+</body>
