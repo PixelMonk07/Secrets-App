@@ -428,3 +428,141 @@ export const postEdit = async (req, res) => {
   }
 
 };
+
+export const getComments = async (req, res) => {
+    const secretId = Number(req.params.secretId);
+
+    if (!Number.isInteger(secretId)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid secret id"
+        });
+    }
+
+    try {
+        const result = await db.query(
+            `
+            SELECT
+                comments.id,
+                comments.comment,
+                comments.created_at,
+                users.anonymous_name,
+                comments.user_id
+            FROM comments
+            JOIN users
+                ON users.id = comments.user_id
+            WHERE comments.secret_id = $1
+            ORDER BY comments.created_at ASC
+            `,
+            [secretId]
+        );
+
+        res.json({
+            success: true,
+            comments: result.rows
+        });
+
+    } catch (err) {
+        logger.error(err);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch comments"
+        });
+    }
+};
+
+export const addComment = async (req, res) => {
+    const secretId = Number(req.params.secretId);
+    const userId = req.user?.id;
+    const comment = req.body.comment?.trim();
+
+    // Authentication check
+    if (!userId) {
+        return res.status(401).json({
+            success: false,
+            message: "Login required"
+        });
+    }
+
+    // Secret ID validation
+    if (!Number.isInteger(secretId)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid secret id"
+        });
+    }
+
+    // Comment validation
+    if (!comment) {
+        return res.status(400).json({
+            success: false,
+            message: "Comment cannot be empty"
+        });
+    }
+
+    // Maximum length
+    if (comment.length > 500) {
+        return res.status(400).json({
+            success: false,
+            message: "Comment cannot exceed 500 characters"
+        });
+    }
+
+    try {
+
+        // Check whether the secret exists
+        const secretCheck = await db.query(
+            "SELECT id FROM secrets WHERE id = $1",
+            [secretId]
+        );
+
+        if (secretCheck.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "Secret not found"
+            });
+        }
+
+        // Insert comment
+        const result = await db.query(
+            `
+            INSERT INTO comments
+                (user_id, secret_id, comment)
+            VALUES
+                ($1, $2, $3)
+            RETURNING id, comment, created_at
+            `,
+            [userId, secretId, comment]
+        );
+
+        // Get anonymous name
+        const userResult = await db.query(
+            `
+            SELECT anonymous_name
+            FROM users
+            WHERE id = $1
+            `,
+            [userId]
+        );
+
+        res.status(201).json({
+            success: true,
+            comment: {
+                id: result.rows[0].id,
+                comment: result.rows[0].comment,
+                created_at: result.rows[0].created_at,
+                anonymous_name: userResult.rows[0].anonymous_name,
+                user_id: userId
+            }
+        });
+
+    } catch (err) {
+        logger.error(err);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to add comment"
+        });
+    }
+};

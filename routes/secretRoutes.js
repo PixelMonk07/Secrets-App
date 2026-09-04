@@ -11,5 +11,7 @@ router.post("/like/:secretId", isAuthenticated, secretController.toggleLike);
 router.post("/delete/:id", isAuthenticated, secretController.deleteSecret);
 router.get("/edit/:id", isAuthenticated, secretController.getEdit);
 router.post("/edit/:id", isAuthenticated, secretController.postEdit);
+router.get("/comments/:secretId", isAuthenticated, secretController.getComments);
+router.post("/comments/:secretId", isAuthenticated, secretController.addComment);
 
 export default router;
