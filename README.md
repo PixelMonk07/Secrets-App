@@ -358,7 +358,7 @@ npm start
 
 ## 🚀 Future Improvements
 
-- 💬 Comments on secrets
+- 💬 Comments on secrets ✅
 - 🔔 Notifications
 - 🔍 Search secrets
 - 🏷 Tags & Categories
