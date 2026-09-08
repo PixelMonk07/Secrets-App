@@ -30,6 +30,8 @@ export const getSecrets = async (req, res) => {
 
     COUNT(DISTINCT likes.id)::INTEGER AS like_count,
 
+    COUNT(DISTINCT comments.id)::INTEGER AS comments_count,
+
     CASE
         WHEN COUNT(
             CASE
@@ -43,10 +45,13 @@ export const getSecrets = async (req, res) => {
 FROM secrets
 
 JOIN users
-ON users.id = secrets.user_id
+  ON users.id = secrets.user_id
 
 LEFT JOIN likes
-ON likes.secret_id = secrets.id
+  ON likes.secret_id = secrets.id
+
+LEFT JOIN comments
+    ON comments.secret_id = secrets.id
 
 GROUP BY
     secrets.id,
