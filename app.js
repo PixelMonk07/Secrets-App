@@ -23,13 +23,8 @@ app.use(helmet());
 app.use(
   session({
     store: new PgSession({
-      conObject: {
-        user: process.env.PG_USER,
-        host: process.env.PG_HOST,
-        database: process.env.PG_DATABASE,
-        password: process.env.PG_PASSWORD,
-        port: process.env.PG_PORT
-      }
+      pool: db,
+      tableName: "user_sessions"
     }),
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -38,7 +33,8 @@ app.use(
     cookie: {
       maxAge: 24 * 60 * 60 * 1000,
       httpOnly: true,
-      sameSite: "lax"
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production"
     }
   })
 );
