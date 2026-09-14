@@ -8,6 +8,7 @@ const db = new pg.Pool({
   database: process.env.PG_DATABASE || "secrets",
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT || 5432,
+  connectionString: process.env.DATABASE_URL,
   max: 20,
 });
 
