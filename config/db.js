@@ -3,11 +3,6 @@ import "./env.js"
 
 
 const db = new pg.Pool({
-  user: process.env.PG_USER || "postgres",
-  host: process.env.PG_HOST || "localhost",
-  database: process.env.PG_DATABASE || "secrets",
-  password: process.env.PG_PASSWORD,
-  port: process.env.PG_PORT || 5432,
   connectionString: process.env.DATABASE_URL,
   max: 20,
 });
